@@ -77,7 +77,7 @@ class OWA:
         log = logging.getLogger(f"auth_owa_O365({email})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.password), verify=False)
+        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.password), headers=headers, verify=False)
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {email}:{self.password}"))
         else:
