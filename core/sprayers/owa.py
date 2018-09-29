@@ -7,9 +7,8 @@ from core.utils.messages import *
 
 
 class OWA:
-    def __init__(self, domain, password):
+    def __init__(self, domain):
         self.domain = domain
-        self.password = password
         self.log = logging.getLogger('owasprayer')
         self.valid_accounts = set()
         self.autodiscover_url = None
@@ -17,6 +16,14 @@ class OWA:
         self.O365 = False
 
         self.recon()
+
+    @property
+    def password(self):
+        return self.__password
+
+    @password.setter
+    def password(self, password):
+        self.__password = password
 
     def recon(self):
         self.autodiscover_url = self.get_autodiscover_url(self.domain)
@@ -77,8 +84,8 @@ class OWA:
         log = logging.getLogger(f"auth_owa_O365({email})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.password), headers=headers, verify=False)
-        creds = f"{email}:{self.password}"
+        r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.__password), headers=headers, verify=False)
+        creds = f"{email}:{self.__password}"
         if r.status_code == 200:
             self.valid_accounts.add(creds)
             log.info(print_good(f"Found credentials: {creds}"))
@@ -95,8 +102,8 @@ class OWA:
         log = logging.getLogger(f"auth_owa({email})")
 
         headers = {"Content-Type": "text/xml"}
-        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(f'{self.netbios_domain}\\{email}', self.password), verify=False)
+        r = requests.get(self.autodiscover_url, auth=HttpNtlmAuth(f'{self.netbios_domain}\\{email}', self.__password), verify=False)
         if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            log.info(print_good(f"Found credentials: {email}:{self.__password}"))
         else:
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
+            log.info(print_bad(f"Authentication failed: {email}:{self.__password} (Invalid credentials)"))
