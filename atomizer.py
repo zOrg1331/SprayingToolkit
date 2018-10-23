@@ -74,7 +74,9 @@ class Atomizer:
         for password in passwordfile_fd:
             if max_tries > 0 and attempt >= max_tries:
                 elapsed = time.time() - start_ts
-                delay = interval - elapsed
+                delay = 0
+                if interval > elapsed:
+                    delay = interval - elapsed
                 log.info(f"waiting for {delay} seconds...")
                 time.sleep(delay)
                 attempt = 1
